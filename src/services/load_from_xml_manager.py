@@ -36,7 +36,6 @@ fountains_data = {}
 skills_data = {}
 
 RACES_DATA_PATH = "data/races.xml"
-CLASSES_DATA_PATH = "data/classes.xml"
 
 
 def load_races() -> dict[str, dict[str, any]]:
@@ -62,31 +61,6 @@ def load_races() -> dict[str, dict[str, any]]:
         ]
         races[race_element.tag] = race
     return races
-
-
-def load_classes() -> dict[str, dict[str, any]]:
-    """
-
-    :return:
-    """
-    classes = {}
-    classes_file = etree.parse(CLASSES_DATA_PATH).getroot()
-    for class_element in classes_file.findall("*"):
-        class_data = {}
-        constitution = class_element.find("constitution")
-        class_data["constitution"] = (
-            int(constitution.text.strip()) if constitution is not None else 0
-        )
-        move = class_element.find("move")
-        class_data["move"] = int(move.text.strip()) if move is not None else 0
-        class_data["stats_up"] = load_stats_up(class_element)
-        class_data["skills"] = [
-            get_skill_data(skill.text.strip())
-            for skill in class_element.findall("skills/skill/name")
-        ]
-        classes[class_element.tag] = class_data
-    return classes
-
 
 def load_stat_up(element, stat_name) -> Sequence[int]:
     """
