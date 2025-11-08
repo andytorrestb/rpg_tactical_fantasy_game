@@ -31,7 +31,7 @@ class TestStartScreen(unittest.TestCase):
     def setUpClass(cls):
         super(TestStartScreen, cls).setUpClass()
         minimal_setup_for_game()
-        cls.save_url = "saves/main_save.xml"
+        cls.save_url = "saves/save_0.xml"
         cls.level_class = LevelScene
         cls.buttons.append(
             Rect(
