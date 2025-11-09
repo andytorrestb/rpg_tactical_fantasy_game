@@ -83,8 +83,6 @@ class TestStartScreen(unittest.TestCase):
         center_x = int(center_x_base * scale_x)
         center_y = int(center_y_base * scale_y)
         position = Position(center_x, center_y)
-        # Print pos in case of test failure
-        print(f"Generated position: {position}")
         return position
 
     def setUp(self):
