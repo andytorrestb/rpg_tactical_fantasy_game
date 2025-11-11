@@ -1444,6 +1444,13 @@ def create_choose_language_menu(buttons_callback: Callable) -> InfoBox:
                 callback=lambda: buttons_callback("es"),
             )
         ],
+        [
+            Button(
+                title="Français",
+                font=fonts["LANGUAGE_FONT"],
+                callback=lambda: buttons_callback("fr"),
+            )
+        ],
     ]
     return InfoBox(
         STR_CHOOSE_LANGUAGE,

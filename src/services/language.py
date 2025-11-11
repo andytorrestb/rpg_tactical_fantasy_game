@@ -16,6 +16,11 @@ elif language == "zh_cn":
 elif language == "es":
     from data.en.fonts_description import fonts_description
     from data.es.text import *
+elif language == "fr":
+    from data.fr.fonts_description import fonts_description
+    from data.fr.text import *
+else:
+    raise ValueError(f"Unsupported language: {language}")
 
 def get_localized_string(tree: etree.Element):
     """
