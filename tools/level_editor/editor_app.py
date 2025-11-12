@@ -14,6 +14,7 @@ import pygame
 
 from tools.level_editor.tilesets import Tileset, load_tilesets, gid_lookup
 from tools.level_editor.map_template import MapTemplate
+from tools.level_editor.tile_categories import tile_categorizer
 
 
 TILE_PIXELS = 32  # Size of map tiles in the editor grid
@@ -28,6 +29,18 @@ TAB_HEIGHT = 28
 TAB_PAD_X = 10
 TAB_SPACING = 8
 
+# Layer management
+LAYER_PANEL_WIDTH = 150
+LAYER_BUTTON_HEIGHT = 25
+LAYER_SPACING = 5
+LAYER_NAMES = ["ground", "obstacles", "allies", "foes"]
+LAYER_COLORS = {
+    "ground": (100, 150, 100),
+    "obstacles": (150, 100, 100),
+    "allies": (100, 100, 200),
+    "foes": (200, 100, 100)
+}
+
 
 def draw_grid(
     screen: pygame.Surface,
@@ -36,6 +49,7 @@ def draw_grid(
     font: pygame.font.Font,
     selected_gid: int,
     tool_name: str,
+    current_layer: str,
     grid_w: int,
     grid_h: int,
     rect_preview: Optional[Tuple[int, int, int, int]] = None,
@@ -44,28 +58,51 @@ def draw_grid(
     # Background checker for empty cells
     checker_a = (40, 40, 44)
     checker_b = (48, 48, 52)
+    
     for y in range(tmpl.height):
         for x in range(tmpl.width):
             rect = pygame.Rect(x * TILE_PIXELS, y * TILE_PIXELS, TILE_PIXELS, TILE_PIXELS)
-            gid = tmpl.grid[y][x]
-            if gid <= 0:
-                color = checker_a if (x + y) % 2 == 0 else checker_b
-                pygame.draw.rect(screen, color, rect)
+            
+            # Draw background checker
+            color = checker_a if (x + y) % 2 == 0 else checker_b
+            pygame.draw.rect(screen, color, rect)
+            
+            # Draw all visible layers from bottom to top
+            for layer_name in LAYER_NAMES:
+                if layer_name in tmpl.layers and tmpl.layers[layer_name].visible:
+                    gid = tmpl.layers[layer_name].get(x, y)
+                    if gid > 0:
+                        ts, local_id = gid_lookup(tilesets, gid)
+                        if ts is not None and local_id is not None:
+                            surf = ts.get_surface_by_local_id(local_id)
+                            if surf is not None:
+                                if surf.get_width() != TILE_PIXELS or surf.get_height() != TILE_PIXELS:
+                                    surf = pygame.transform.smoothscale(surf, (TILE_PIXELS, TILE_PIXELS))
+                                
+                                # Add slight tint for non-ground layers for visual distinction
+                                if layer_name != "ground":
+                                    tinted_surf = surf.copy()
+                                    tint_color = LAYER_COLORS.get(layer_name, (255, 255, 255))
+                                    tint_overlay = pygame.Surface((TILE_PIXELS, TILE_PIXELS))
+                                    tint_overlay.fill(tint_color)
+                                    tint_overlay.set_alpha(30)
+                                    tinted_surf.blit(tint_overlay, (0, 0), special_flags=pygame.BLEND_MULT)
+                                    screen.blit(tinted_surf, rect)
+                                else:
+                                    screen.blit(surf, rect)
+                            else:
+                                pygame.draw.rect(screen, (120, 40, 40), rect)
+                        else:
+                            pygame.draw.rect(screen, (80, 80, 80), rect)
+            
+            # Highlight current layer with border
+            if current_layer in tmpl.layers:
+                layer_color = LAYER_COLORS.get(current_layer, (255, 255, 255))
+                pygame.draw.rect(screen, layer_color, rect, width=1)
             else:
-                ts, local_id = gid_lookup(tilesets, gid)
-                if ts is not None and local_id is not None:
-                    surf = ts.get_surface_by_local_id(local_id)
-                    if surf is not None:
-                        if surf.get_width() != TILE_PIXELS or surf.get_height() != TILE_PIXELS:
-                            surf = pygame.transform.smoothscale(surf, (TILE_PIXELS, TILE_PIXELS))
-                        screen.blit(surf, rect)
-                    else:
-                        pygame.draw.rect(screen, (120, 40, 40), rect)
-                else:
-                    pygame.draw.rect(screen, (80, 80, 80), rect)
-            pygame.draw.rect(screen, (20, 20, 20), rect, width=MARGIN)
+                pygame.draw.rect(screen, (20, 20, 20), rect, width=MARGIN)
 
-    label = f"GID {selected_gid} (Tool: {tool_name})"
+    label = f"GID {selected_gid} (Tool: {tool_name}, Layer: {current_layer})"
     text_surface = font.render(f"Selected: {label}", True, (255, 255, 255))
     screen.blit(text_surface, (8, 8))
 
@@ -89,6 +126,72 @@ def draw_grid(
     screen.blit(hint, (8, grid_h - hint.get_height() - 8))
 
 
+def draw_layer_panel(
+    screen: pygame.Surface,
+    x_offset: int,
+    height: int,
+    tmpl: MapTemplate,
+    font: pygame.font.Font,
+    current_layer: str,
+) -> None:
+    """Draw the layer management panel."""
+    # Background
+    panel_rect = pygame.Rect(x_offset, 0, LAYER_PANEL_WIDTH, height)
+    pygame.draw.rect(screen, (28, 28, 32), panel_rect)
+    pygame.draw.rect(screen, (60, 60, 60), panel_rect, 1)
+
+    # Title
+    title_surf = font.render("LAYERS", True, (255, 255, 255))
+    screen.blit(title_surf, (x_offset + 8, 8))
+
+    # Layer buttons
+    y_pos = 35
+    for i, layer_name in enumerate(LAYER_NAMES):
+        button_rect = pygame.Rect(
+            x_offset + 8, y_pos, LAYER_PANEL_WIDTH - 16, LAYER_BUTTON_HEIGHT
+        )
+        
+        # Get layer visibility
+        layer = tmpl.layers.get(layer_name)
+        is_visible = layer.visible if layer else True
+        
+        # Button background
+        if layer_name == current_layer:
+            # Current layer highlight
+            pygame.draw.rect(screen, LAYER_COLORS[layer_name], button_rect)
+            text_color = (255, 255, 255)
+        elif is_visible:
+            # Visible but not current
+            dark_color = tuple(c // 2 for c in LAYER_COLORS[layer_name])
+            pygame.draw.rect(screen, dark_color, button_rect)
+            text_color = (220, 220, 220)
+        else:
+            # Hidden layer
+            pygame.draw.rect(screen, (40, 40, 40), button_rect)
+            text_color = (120, 120, 120)
+        
+        # Button border
+        pygame.draw.rect(screen, (80, 80, 80), button_rect, 1)
+        
+        # Layer name
+        name_surf = font.render(layer_name.upper(), True, text_color)
+        text_x = button_rect.x + 8
+        text_y = button_rect.y + (LAYER_BUTTON_HEIGHT - name_surf.get_height()) // 2
+        screen.blit(name_surf, (text_x, text_y))
+        
+        # Visibility toggle (eye icon approximation)
+        eye_x = button_rect.right - 20
+        eye_y = button_rect.y + LAYER_BUTTON_HEIGHT // 2
+        if is_visible:
+            pygame.draw.circle(screen, (255, 255, 255), (eye_x, eye_y), 5, 1)
+            pygame.draw.circle(screen, (255, 255, 255), (eye_x, eye_y), 2)
+        else:
+            pygame.draw.line(screen, (150, 150, 150), (eye_x - 6, eye_y - 3), (eye_x + 6, eye_y + 3), 2)
+            pygame.draw.line(screen, (150, 150, 150), (eye_x - 6, eye_y + 3), (eye_x + 6, eye_y - 3), 2)
+        
+        y_pos += LAYER_BUTTON_HEIGHT + LAYER_SPACING
+
+
 def draw_palette_tilesets(
     screen: pygame.Surface,
     x_offset: int,
@@ -98,15 +201,21 @@ def draw_palette_tilesets(
     active_ts_index: int,
     selected_gid: int,
     scroll_by_ts: Dict[int, int],
+    current_layer: str,
 ) -> None:
-    """Draw the palette panel with tabs for tilesets and tile thumbnails."""
+    """Draw the palette panel with layer-filtered tiles and tileset tabs."""
     # Background
     palette_rect = pygame.Rect(x_offset, 0, PALETTE_WIDTH, height)
     pygame.draw.rect(screen, (32, 32, 36), palette_rect)
 
+    # Layer indicator at top
+    layer_text = f"Layer: {current_layer.upper()}"
+    layer_surf = font.render(layer_text, True, LAYER_COLORS.get(current_layer, (255, 255, 255)))
+    screen.blit(layer_surf, (x_offset + PALETTE_MARGIN, 5))
+    
     # Tabs
     tab_x = x_offset + PALETTE_MARGIN
-    tab_y = PALETTE_MARGIN
+    tab_y = 25  # Moved down to make room for layer indicator
     for i, ts in enumerate(tilesets):
         title = ts.name
         t_surf = font.render(title, True, (0, 0, 0))
@@ -118,7 +227,7 @@ def draw_palette_tilesets(
         screen.blit(t_surf, (tab_rect.x + TAB_PAD_X, tab_rect.y + (TAB_HEIGHT - t_surf.get_height()) // 2))
         tab_x += tab_w + TAB_SPACING
 
-    # Grid of tiles for active tileset
+    # Grid of layer-specific tiles for active tileset
     start_y = tab_y + TAB_HEIGHT + PALETTE_MARGIN
     # Compute columns that fit
     cols = max(1, (PALETTE_WIDTH - PALETTE_MARGIN * 2) // (PALETTE_TILE + PALETTE_MARGIN))
@@ -127,19 +236,31 @@ def draw_palette_tilesets(
     ts = tilesets[active_ts_index] if tilesets else None
     if not ts:
         return
+        
+    # Get layer-specific palette
+    layer_palette = tile_categorizer.create_layer_palette(ts, current_layer)
+    
+    # If no layer-specific tiles, show all tiles (fallback)
+    if not layer_palette:
+        layer_palette = list(range(ts.tilecount))
+    
     scroll = scroll_by_ts.get(active_ts_index, 0)
-    max_rows = (ts.tilecount + cols - 1) // cols
+    max_rows = (len(layer_palette) + cols - 1) // cols
     scroll = max(0, min(scroll, max(0, max_rows - rows_fit)))
     scroll_by_ts[active_ts_index] = scroll
 
     start_index = scroll * cols
-    end_index = min(ts.tilecount, start_index + cols * rows_fit)
-    for idx, local_id in enumerate(range(start_index, end_index)):
-        r = idx // cols
-        c = idx % cols
+    end_index = min(len(layer_palette), start_index + cols * rows_fit)
+    
+    for idx in range(start_index, end_index):
+        local_id = layer_palette[idx]
+        display_idx = idx - start_index
+        r = display_idx // cols
+        c = display_idx % cols
         x = x_offset + PALETTE_MARGIN + c * (PALETTE_TILE + PALETTE_MARGIN)
         y = start_y + r * (PALETTE_TILE + PALETTE_MARGIN)
         rect = pygame.Rect(x, y, PALETTE_TILE, PALETTE_TILE)
+        
         surf = ts.get_surface_by_local_id(local_id)
         if surf is not None:
             if surf.get_width() != PALETTE_TILE or surf.get_height() != PALETTE_TILE:
@@ -152,41 +273,41 @@ def draw_palette_tilesets(
             pygame.draw.rect(screen, (255, 215, 0), rect.inflate(4, 4), 2)
 
 
-def fill_rectangle(tmpl: MapTemplate, x0: int, y0: int, x1: int, y1: int, tile_id: int) -> None:
-    """Fill rectangle bounded by (x0,y0) and (x1,y1) inclusive with tile_id."""
+def fill_rectangle(tmpl: MapTemplate, x0: int, y0: int, x1: int, y1: int, tile_id: int, layer_name: str) -> None:
+    """Fill rectangle bounded by (x0,y0) and (x1,y1) inclusive with tile_id on specified layer."""
     if x0 > x1:
         x0, x1 = x1, x0
     if y0 > y1:
         y0, y1 = y1, y0
     for y in range(max(0, y0), min(tmpl.height - 1, y1) + 1):
         for x in range(max(0, x0), min(tmpl.width - 1, x1) + 1):
-            tmpl.set(x, y, tile_id)
+            tmpl.set(x, y, tile_id, layer_name)
 
 
-def flood_fill(tmpl: MapTemplate, sx: int, sy: int, new_id: int) -> None:
-    """Flood fill from (sx,sy) replacing the original id with new_id.
+def flood_fill(tmpl: MapTemplate, sx: int, sy: int, new_id: int, layer_name: str) -> None:
+    """Flood fill from (sx,sy) replacing the original id with new_id on specified layer.
 
     Uses an explicit stack (non-recursive) to avoid recursion limits.
     """
     if not (0 <= sx < tmpl.width and 0 <= sy < tmpl.height):
         return
-    original = tmpl.get(sx, sy)
+    original = tmpl.get(sx, sy, layer_name)
     if original == new_id:
         return
     w, h = tmpl.width, tmpl.height
     stack = [(sx, sy)]
     while stack:
         x, y = stack.pop()
-        if tmpl.get(x, y) != original:
+        if tmpl.get(x, y, layer_name) != original:
             continue
-        tmpl.set(x, y, new_id)
-        if x > 0 and tmpl.get(x - 1, y) == original:
+        tmpl.set(x, y, new_id, layer_name)
+        if x > 0 and tmpl.get(x - 1, y, layer_name) == original:
             stack.append((x - 1, y))
-        if x + 1 < w and tmpl.get(x + 1, y) == original:
+        if x + 1 < w and tmpl.get(x + 1, y, layer_name) == original:
             stack.append((x + 1, y))
-        if y > 0 and tmpl.get(x, y - 1) == original:
+        if y > 0 and tmpl.get(x, y - 1, layer_name) == original:
             stack.append((x, y - 1))
-        if y + 1 < h and tmpl.get(x, y + 1) == original:
+        if y + 1 < h and tmpl.get(x, y + 1, layer_name) == original:
             stack.append((x, y + 1))
 
 
@@ -194,7 +315,8 @@ def editor_main(width: int = 22, height: int = 14, template_path: Optional[Path]
     pygame.init()
     grid_w = width * TILE_PIXELS
     grid_h = height * TILE_PIXELS
-    screen = pygame.display.set_mode((grid_w + PALETTE_WIDTH, grid_h))
+    total_w = grid_w + LAYER_PANEL_WIDTH + PALETTE_WIDTH
+    screen = pygame.display.set_mode((total_w, grid_h))
     pygame.display.set_caption("Level Editor")
     font = pygame.font.SysFont(None, 20)
 
@@ -214,7 +336,8 @@ def editor_main(width: int = 22, height: int = 14, template_path: Optional[Path]
             tilesets = load_tilesets(tsx_paths)
         grid_w = tmpl.width * TILE_PIXELS
         grid_h = tmpl.height * TILE_PIXELS
-        screen = pygame.display.set_mode((grid_w + PALETTE_WIDTH, grid_h))
+        total_w = grid_w + LAYER_PANEL_WIDTH + PALETTE_WIDTH
+        screen = pygame.display.set_mode((total_w, grid_h))
     else:
         tmpl = MapTemplate.create(width, height, fill=0, tilesets=[str(p.relative_to(repo_root)) for p in tsx_paths])
         # initialize a default path if none provided
@@ -223,6 +346,9 @@ def editor_main(width: int = 22, height: int = 14, template_path: Optional[Path]
 
     # Selected tile: gid 0 means empty
     selected_gid = 0
+    
+    # Current layer
+    current_layer = "ground"
 
     # Palette state
     active_tileset_index = 0
@@ -240,13 +366,13 @@ def editor_main(width: int = 22, height: int = 14, template_path: Optional[Path]
     save_message = ""
 
     def draw_save_modal():
-        overlay = pygame.Surface((grid_w + PALETTE_WIDTH, grid_h), pygame.SRCALPHA)
+        overlay = pygame.Surface((total_w, grid_h), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 160))
         screen.blit(overlay, (0, 0))
 
-        modal_w = min(760, grid_w - 40 + PALETTE_WIDTH)
+        modal_w = min(760, total_w - 40)
         modal_h = 140
-        modal_x = ((grid_w + PALETTE_WIDTH) - modal_w) // 2
+        modal_x = (total_w - modal_w) // 2
         modal_y = (grid_h - modal_h) // 2
         modal_rect = pygame.Rect(modal_x, modal_y, modal_w, modal_h)
         pygame.draw.rect(screen, (38, 38, 44), modal_rect)
@@ -277,12 +403,12 @@ def editor_main(width: int = 22, height: int = 14, template_path: Optional[Path]
     help_active = False
 
     def draw_help_overlay():
-        overlay = pygame.Surface((grid_w + PALETTE_WIDTH, grid_h), pygame.SRCALPHA)
+        overlay = pygame.Surface((total_w, grid_h), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
         screen.blit(overlay, (0, 0))
 
         pad = 14
-        box_w = min(820, grid_w + PALETTE_WIDTH - pad * 2)
+        box_w = min(820, total_w - pad * 2)
         # Rough height calc based on lines
         lines = [
             "Controls:",
@@ -290,10 +416,12 @@ def editor_main(width: int = 22, height: int = 14, template_path: Optional[Path]
             "  Left Click (grid): paint    | Right Click (grid): eyedrop",
             "  Mouse Wheel (palette): scroll tiles in active tileset tab",
             "  Click a tab to switch tileset; click a tile to select",
+            "  1-4: Switch layers (Ground/Obstacles/Allies/Foes)",
+            "  Click layer name: switch layer | Click eye: toggle visibility",
             "  Ctrl+S: Save | Ctrl+Shift+S or F2: Save As | L: Load | ESC: Exit",
         ]
         box_h = pad * 2 + len(lines) * (font.get_height() + 4)
-        x = ((grid_w + PALETTE_WIDTH) - box_w) // 2
+        x = (total_w - box_w) // 2
         y = (grid_h - box_h) // 2
         box = pygame.Rect(x, y, box_w, box_h)
         pygame.draw.rect(screen, (34, 34, 40), box)
@@ -375,12 +503,24 @@ def editor_main(width: int = 22, height: int = 14, template_path: Optional[Path]
                         tmpl = MapTemplate.load_json(path)
                         grid_w = tmpl.width * TILE_PIXELS
                         grid_h = tmpl.height * TILE_PIXELS
-                        screen = pygame.display.set_mode((grid_w + PALETTE_WIDTH, grid_h))
+                        total_w = grid_w + LAYER_PANEL_WIDTH + PALETTE_WIDTH
+                        screen = pygame.display.set_mode((total_w, grid_h))
                         print(f"Loaded template from {path}")
                         current_path = path
-                elif pygame.K_1 <= event.key <= pygame.K_9:
-                    # Quick-select nth visible tile in active tileset
-                    n = event.key - pygame.K_1
+                elif pygame.K_1 <= event.key <= pygame.K_4:
+                    # Layer switching (1-4 for ground, obstacles, allies, foes)
+                    layer_index = event.key - pygame.K_1
+                    if layer_index < len(LAYER_NAMES):
+                        current_layer = LAYER_NAMES[layer_index]
+                        # Auto-select a default tile for this layer
+                        ts = tilesets[active_tileset_index] if tilesets else None
+                        if ts:
+                            layer_palette = tile_categorizer.create_layer_palette(ts, current_layer)
+                            if layer_palette:
+                                selected_gid = ts.firstgid + layer_palette[0]
+                elif pygame.K_5 <= event.key <= pygame.K_9:
+                    # Quick-select nth visible tile in active tileset (5-9 to avoid conflict with layers)
+                    n = event.key - pygame.K_5
                     ts = tilesets[active_tileset_index]
                     scroll = palette_scroll_by_ts.get(active_tileset_index, 0)
                     cols = max(1, (PALETTE_WIDTH - PALETTE_MARGIN * 2) // (PALETTE_TILE + PALETTE_MARGIN))
@@ -405,19 +545,46 @@ def editor_main(width: int = 22, height: int = 14, template_path: Optional[Path]
                         x = mx // TILE_PIXELS
                         y = my // TILE_PIXELS
                         if tool == "PAINT":
-                            tmpl.set(x, y, selected_gid)
+                            tmpl.set(x, y, selected_gid, current_layer)
                         elif tool == "RECT":
                             rect_active = True
                             rect_start = (x, y)
                             rect_current = (x, y)
                         elif tool == "FILL":
-                            flood_fill(tmpl, x, y, selected_gid)
-                    else:  # palette click
+                            flood_fill(tmpl, x, y, selected_gid, current_layer)
+                    elif mx < grid_w + LAYER_PANEL_WIDTH:  # layer panel click
                         rel_x = mx - grid_w
                         rel_y = my
-                        # Tabs area
+                        # Check layer button clicks
+                        y_pos = 35
+                        for i, layer_name in enumerate(LAYER_NAMES):
+                            button_rect = pygame.Rect(
+                                8, y_pos, LAYER_PANEL_WIDTH - 16, LAYER_BUTTON_HEIGHT
+                            )
+                            if button_rect.collidepoint(rel_x, rel_y):
+                                # Check if clicking on visibility toggle (eye icon area)
+                                eye_x = button_rect.right - 20
+                                if rel_x > eye_x - 10:  # Clicking near eye icon
+                                    # Toggle visibility
+                                    layer = tmpl.get_layer(layer_name)
+                                    layer.visible = not layer.visible
+                                else:
+                                    # Switch to this layer
+                                    current_layer = layer_name
+                                    # Auto-select a default tile for this layer
+                                    ts = tilesets[active_tileset_index] if tilesets else None
+                                    if ts:
+                                        layer_palette = tile_categorizer.create_layer_palette(ts, current_layer)
+                                        if layer_palette:
+                                            selected_gid = ts.firstgid + layer_palette[0]
+                                break
+                            y_pos += LAYER_BUTTON_HEIGHT + LAYER_SPACING
+                    else:  # palette click
+                        rel_x = mx - grid_w - LAYER_PANEL_WIDTH
+                        rel_y = my
+                        # Tabs area  
                         tab_x = PALETTE_MARGIN
-                        tab_y = PALETTE_MARGIN
+                        tab_y = 25  # Updated to match new tab position
                         tx = tab_x
                         clicked_tab = None
                         for i, ts in enumerate(tilesets):
@@ -431,51 +598,57 @@ def editor_main(width: int = 22, height: int = 14, template_path: Optional[Path]
                         if clicked_tab is not None:
                             active_tileset_index = clicked_tab
                         else:
-                            # Tile grid area
+                            # Tile grid area - now using layer-specific palette
                             start_y = tab_y + TAB_HEIGHT + PALETTE_MARGIN
                             if rel_y >= start_y:
                                 ts = tilesets[active_tileset_index]
+                                # Get layer-specific palette
+                                layer_palette = tile_categorizer.create_layer_palette(ts, current_layer)
+                                if not layer_palette:
+                                    layer_palette = list(range(ts.tilecount))
+                                
                                 cols = max(1, (PALETTE_WIDTH - PALETTE_MARGIN * 2) // (PALETTE_TILE + PALETTE_MARGIN))
                                 rows_fit = max(1, (grid_h - start_y - PALETTE_MARGIN) // (PALETTE_TILE + PALETTE_MARGIN))
                                 scroll = palette_scroll_by_ts.get(active_tileset_index, 0)
                                 c = (rel_x - PALETTE_MARGIN) // (PALETTE_TILE + PALETTE_MARGIN)
                                 r = (rel_y - start_y) // (PALETTE_TILE + PALETTE_MARGIN)
                                 if 0 <= c < cols and 0 <= r < rows_fit:
-                                    local_index = scroll * cols + r * cols + c
-                                    if 0 <= local_index < ts.tilecount:
-                                        selected_gid = ts.firstgid + local_index
+                                    palette_index = scroll * cols + r * cols + c
+                                    if 0 <= palette_index < len(layer_palette):
+                                        local_id = layer_palette[palette_index]
+                                        selected_gid = ts.firstgid + local_id
                 elif event.button == 3:  # right click eyedropper on grid
                     mx, my = event.pos
                     if mx < grid_w:
                         x = mx // TILE_PIXELS
                         y = my // TILE_PIXELS
                         try:
-                            picked = tmpl.get(x, y)
+                            picked = tmpl.get(x, y, current_layer)
                             if isinstance(picked, int):
                                 selected_gid = picked
-                        except IndexError:
+                        except (IndexError, KeyError):
                             pass
                 elif event.button == 4:  # wheel up
                     mx, my = event.pos
-                    if mx >= grid_w:
+                    if mx >= grid_w + LAYER_PANEL_WIDTH:
                         # Scroll active tileset up
                         scroll = palette_scroll_by_ts.get(active_tileset_index, 0)
                         palette_scroll_by_ts[active_tileset_index] = max(0, scroll - 1)
-                    else:
-                        # no-op for grid scrolling; preserve previous gid
-                        pass
                 elif event.button == 5:  # wheel down
                     mx, my = event.pos
-                    if mx >= grid_w:
+                    if mx >= grid_w + LAYER_PANEL_WIDTH:
                         ts = tilesets[active_tileset_index]
+                        # Get layer-specific palette for scroll calculation
+                        layer_palette = tile_categorizer.create_layer_palette(ts, current_layer)
+                        if not layer_palette:
+                            layer_palette = list(range(ts.tilecount))
+                        
                         cols = max(1, (PALETTE_WIDTH - PALETTE_MARGIN * 2) // (PALETTE_TILE + PALETTE_MARGIN))
-                        rows_fit = max(1, (grid_h - (PALETTE_MARGIN + TAB_HEIGHT + PALETTE_MARGIN) - PALETTE_MARGIN) // (PALETTE_TILE + PALETTE_MARGIN))
-                        max_rows = (ts.tilecount + cols - 1) // cols
+                        rows_fit = max(1, (grid_h - (25 + TAB_HEIGHT + PALETTE_MARGIN) - PALETTE_MARGIN) // (PALETTE_TILE + PALETTE_MARGIN))
+                        max_rows = (len(layer_palette) + cols - 1) // cols
                         max_scroll = max(0, max_rows - rows_fit)
                         scroll = palette_scroll_by_ts.get(active_tileset_index, 0)
                         palette_scroll_by_ts[active_tileset_index] = min(max_scroll, scroll + 1)
-                    else:
-                        pass
             elif event.type == pygame.MOUSEMOTION:
                 if rect_active and tool == "RECT":
                     mx, my = event.pos
@@ -489,7 +662,7 @@ def editor_main(width: int = 22, height: int = 14, template_path: Optional[Path]
                         x1 = mx // TILE_PIXELS
                         y1 = my // TILE_PIXELS
                         x0, y0 = rect_start
-                        fill_rectangle(tmpl, x0, y0, x1, y1, selected_gid)
+                        fill_rectangle(tmpl, x0, y0, x1, y1, selected_gid, current_layer)
                     rect_active = False
                     rect_start = None
                     rect_current = None
@@ -501,8 +674,9 @@ def editor_main(width: int = 22, height: int = 14, template_path: Optional[Path]
             x1, y1 = rect_current
             rect_preview = (x0, y0, x1, y1)
 
-        draw_grid(screen, tmpl, tilesets, font, selected_gid, tool, grid_w, grid_h, rect_preview)
-        draw_palette_tilesets(screen, grid_w, grid_h, tilesets, font, active_tileset_index, selected_gid, palette_scroll_by_ts)
+        draw_grid(screen, tmpl, tilesets, font, selected_gid, tool, current_layer, grid_w, grid_h, rect_preview)
+        draw_layer_panel(screen, grid_w, grid_h, tmpl, font, current_layer)
+        draw_palette_tilesets(screen, grid_w + LAYER_PANEL_WIDTH, grid_h, tilesets, font, active_tileset_index, selected_gid, palette_scroll_by_ts, current_layer)
         if save_as_active:
             draw_save_modal()
         elif help_active:
