@@ -7,6 +7,7 @@ from src.game_entities.skill import Skill
 
 
 CLASSES_DATA_PATH = "data/classes.json"
+SKILLS_DATA_PATH = "data/skills.json"
 skills_data = {}
 
 def get_skill_data(name) -> Skill:
@@ -17,32 +18,37 @@ def get_skill_data(name) -> Skill:
     """
     if name not in skills_data:
         # Required data
-        skill_element = etree.parse("data/skills.xml").find(name)
-        formatted_name = skill_element.find("name/" + language)
-        if formatted_name is not None:
-            formatted_name = formatted_name.text.strip()
-        else:
-            formatted_name = skill_element.find("name/en").text.strip()
-        nature = skill_element.find("type").text.strip()
-        description = get_localized_string(skill_element.find("info")).strip()
+        with open(SKILLS_DATA_PATH, "r", encoding="utf-8") as file:
+            skills_json = json.load(file)
+            skill_element = skills_json[name]
 
-        # Not required elements
-        power = 0
-        power_element = skill_element.find("power")
-        if power_element is not None:
-            power = int(power_element.text.strip())
-        stats = []
-        stats_element = skill_element.find("stats")
-        if stats_element is not None:
-            stats = list(stats_element.text.replace(" ", "").split(","))
-        alterations = []
-        alterations_element = skill_element.find("alteration")
-        if alterations_element is not None:
-            alterations = list(alterations_element.text.replace(" ", "").split(","))
+            # Get localized name (fall back to english)
+            formatted_name = skill_element["name"].get(language, skill_element["name"]["en"])
+            nature = skill_element["type"]
+            
+            # Get localized description (fall back to english)
+            description = skill_element["info"].get(language, skill_element["info"]["en"])
 
-        skills_data[name] = Skill(
-            name, formatted_name, nature, description, power, stats, alterations
-        )
+            # Not required elements
+            power = skill_element.get("power", 0)
+            stats = skill_element.get("stats", [])
+            
+            # Handle alteration/alterations field
+            alterations = []
+            if "alteration" in skill_element:
+                if isinstance(skill_element["alteration"], list):
+                    alterations = skill_element["alteration"]
+                else:
+                    alterations = [skill_element["alteration"]]
+            elif "alterations" in skill_element:
+                if isinstance(skill_element["alterations"], list):
+                    alterations = skill_element["alterations"]
+                else:
+                    alterations = [skill_element["alterations"]]
+
+            skills_data[name] = Skill(
+                name, formatted_name, nature, description, power, stats, alterations
+            )
     return skills_data[name]
 
 
