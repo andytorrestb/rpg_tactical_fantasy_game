@@ -1,0 +1,50 @@
+{
+    "lock_picking": {
+        "name": {
+            "en": "Lock Picking",
+            "zh_cn": "撬锁"
+        },
+        "type": "ACTIVE",
+        "info": {
+            "en": "Ability to open some doors and chests. A door (or a chest) needs two turns of picking to be open",
+            "zh_cn": "能够打开一些门和箱子。一扇门（或一个箱子）需要两轮拾取才能打开"
+        }
+    },
+    "double_attack": {
+        "name": {
+            "en": "Double Attack",
+            "zh_cn": "双重攻击"
+        },
+        "type": "MULTIPLE_ATTACKS",
+        "info": {
+            "en": "When attacking, this character will deal damage twice",
+            "zh_cn": "攻击时造成双倍伤害"
+        }
+    },
+    "covered": {
+        "name": {
+            "en": "Ally Protection",
+            "zh_cn": "友军保护"
+        },
+        "type": "ALLY_BOOST",
+        "stats": ["defense", "resistance"],
+        "power": 1,
+        "info": {
+            "en": "If an ally is adjacent to the unit, during combat defense and resistance are increased by 1",
+            "zh_cn": "如果有盟友与该单位相邻，战斗时防御力和抵抗力增加1"
+        }
+    },
+    "brutal_hitter": {
+        "name": {
+            "en": "Brutal Hitter",
+            "zh_cn": "暴酷球手"
+        },
+        "type": "ALTERATION_CHANCE_BOOST",
+        "alteration": "stun",
+        "power": 5,
+        "info": {
+            "en": "Probability to stun an enemy when using a weapon able to do it is increased by 5%",
+            "zh_cn": "使用能够击晕敌人的武器时，击晕敌人的概率提高5%"
+        }
+    }
+}
