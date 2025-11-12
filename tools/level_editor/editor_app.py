@@ -21,9 +21,9 @@ TILE_PIXELS = 32  # Size of map tiles in the editor grid
 MARGIN = 1        # Grid border thickness
 
 # Palette layout
-PALETTE_WIDTH = 280
+PALETTE_WIDTH = 350  # Increased width to show more sprites
 PALETTE_MARGIN = 8
-PALETTE_TILE = 32   # Palette tile thumbnail size
+PALETTE_TILE = 28   # Slightly smaller tile thumbnails to fit more
 PALETTE_TEXT_COLOR = (240, 240, 240)
 TAB_HEIGHT = 28
 TAB_PAD_X = 10
@@ -202,20 +202,34 @@ def draw_palette_tilesets(
     selected_gid: int,
     scroll_by_ts: Dict[int, int],
     current_layer: str,
+    show_all_sprites: bool = True,
 ) -> None:
     """Draw the palette panel with layer-filtered tiles and tileset tabs."""
     # Background
     palette_rect = pygame.Rect(x_offset, 0, PALETTE_WIDTH, height)
     pygame.draw.rect(screen, (32, 32, 36), palette_rect)
 
-    # Layer indicator at top
-    layer_text = f"Layer: {current_layer.upper()}"
-    layer_surf = font.render(layer_text, True, LAYER_COLORS.get(current_layer, (255, 255, 255)))
-    screen.blit(layer_surf, (x_offset + PALETTE_MARGIN, 5))
+    # Header with layer indicator and filter toggle
+    header_y = 5
+    if show_all_sprites:
+        header_text = f"ALL SPRITES (Layer: {current_layer.upper()})"
+        header_color = (255, 255, 200)
+    else:
+        header_text = f"FILTERED: {current_layer.upper()}"
+        header_color = LAYER_COLORS.get(current_layer, (255, 255, 255))
+    
+    header_surf = font.render(header_text, True, header_color)
+    screen.blit(header_surf, (x_offset + PALETTE_MARGIN, header_y))
+    
+    # Filter toggle button
+    toggle_text = "[F] Filter" if show_all_sprites else "[F] Show All"
+    toggle_surf = font.render(toggle_text, True, (200, 200, 200))
+    toggle_x = x_offset + PALETTE_WIDTH - toggle_surf.get_width() - PALETTE_MARGIN
+    screen.blit(toggle_surf, (toggle_x, header_y))
     
     # Tabs
     tab_x = x_offset + PALETTE_MARGIN
-    tab_y = 25  # Moved down to make room for layer indicator
+    tab_y = 25  # Moved down to make room for header
     for i, ts in enumerate(tilesets):
         title = ts.name
         t_surf = font.render(title, True, (0, 0, 0))
@@ -227,9 +241,9 @@ def draw_palette_tilesets(
         screen.blit(t_surf, (tab_rect.x + TAB_PAD_X, tab_rect.y + (TAB_HEIGHT - t_surf.get_height()) // 2))
         tab_x += tab_w + TAB_SPACING
 
-    # Grid of layer-specific tiles for active tileset
+    # Grid of tiles for active tileset
     start_y = tab_y + TAB_HEIGHT + PALETTE_MARGIN
-    # Compute columns that fit
+    # Compute columns that fit (more columns with smaller tiles)
     cols = max(1, (PALETTE_WIDTH - PALETTE_MARGIN * 2) // (PALETTE_TILE + PALETTE_MARGIN))
     rows_fit = max(1, (height - start_y - PALETTE_MARGIN) // (PALETTE_TILE + PALETTE_MARGIN))
 
@@ -237,23 +251,34 @@ def draw_palette_tilesets(
     if not ts:
         return
         
-    # Get layer-specific palette
-    layer_palette = tile_categorizer.create_layer_palette(ts, current_layer)
+    # Choose palette based on filter setting
+    if show_all_sprites:
+        # Show ALL sprites from the tileset
+        sprite_palette = list(range(ts.tilecount))
+        palette_info = f"Showing all {ts.tilecount} sprites"
+    else:
+        # Show layer-specific sprites only
+        sprite_palette = tile_categorizer.create_layer_palette(ts, current_layer)
+        if not sprite_palette:
+            sprite_palette = list(range(min(100, ts.tilecount)))  # Show first 100 as fallback
+        palette_info = f"Filtered: {len(sprite_palette)} sprites for {current_layer}"
     
-    # If no layer-specific tiles, show all tiles (fallback)
-    if not layer_palette:
-        layer_palette = list(range(ts.tilecount))
+    # Display palette info
+    info_surf = font.render(palette_info, True, (180, 180, 180))
+    info_y = start_y - 15
+    screen.blit(info_surf, (x_offset + PALETTE_MARGIN, info_y))
     
     scroll = scroll_by_ts.get(active_ts_index, 0)
-    max_rows = (len(layer_palette) + cols - 1) // cols
+    max_rows = (len(sprite_palette) + cols - 1) // cols
     scroll = max(0, min(scroll, max(0, max_rows - rows_fit)))
     scroll_by_ts[active_ts_index] = scroll
 
     start_index = scroll * cols
-    end_index = min(len(layer_palette), start_index + cols * rows_fit)
+    end_index = min(len(sprite_palette), start_index + cols * rows_fit)
     
+    # Draw sprite grid
     for idx in range(start_index, end_index):
-        local_id = layer_palette[idx]
+        local_id = sprite_palette[idx]
         display_idx = idx - start_index
         r = display_idx // cols
         c = display_idx % cols
@@ -266,6 +291,19 @@ def draw_palette_tilesets(
             if surf.get_width() != PALETTE_TILE or surf.get_height() != PALETTE_TILE:
                 surf = pygame.transform.smoothscale(surf, (PALETTE_TILE, PALETTE_TILE))
             screen.blit(surf, rect)
+            
+            # Add small text overlay showing tile ID for reference
+            if PALETTE_TILE >= 24:  # Only if tiles are big enough
+                id_text = str(local_id)
+                id_surf = pygame.font.Font(None, 16).render(id_text, True, (255, 255, 255))
+                id_bg = pygame.Surface((id_surf.get_width() + 2, id_surf.get_height()), pygame.SRCALPHA)
+                id_bg.fill((0, 0, 0, 180))
+                screen.blit(id_bg, (x, y))
+                screen.blit(id_surf, (x + 1, y))
+        else:
+            # Draw placeholder for missing sprites
+            pygame.draw.rect(screen, (60, 60, 60), rect)
+            
         pygame.draw.rect(screen, (20, 20, 20), rect, 1)
 
         gid = ts.firstgid + local_id
@@ -349,6 +387,9 @@ def editor_main(width: int = 22, height: int = 14, template_path: Optional[Path]
     
     # Current layer
     current_layer = "ground"
+    
+    # Sprite display mode
+    show_all_sprites = True  # Start in "show all" mode
 
     # Palette state
     active_tileset_index = 0
@@ -412,7 +453,8 @@ def editor_main(width: int = 22, height: int = 14, template_path: Optional[Path]
         # Rough height calc based on lines
         lines = [
             "Controls:",
-            "  P: Paint | R: Rectangle Fill | F: Flood Fill | H: Toggle Help",
+            "  P: Paint | R: Rectangle Fill | Ctrl+F: Flood Fill | H: Toggle Help",
+            "  F: Toggle Sprite Filter (All vs Layer-specific)",
             "  Left Click (grid): paint    | Right Click (grid): eyedrop",
             "  Mouse Wheel (palette): scroll tiles in active tileset tab",
             "  Click a tab to switch tileset; click a tile to select",
@@ -536,8 +578,13 @@ def editor_main(width: int = 22, height: int = 14, template_path: Optional[Path]
                     tool = "RECT"
                     rect_active = False
                 elif event.key == pygame.K_f:
-                    tool = "FILL"
-                    rect_active = False
+                    if event.mod & pygame.KMOD_CTRL:
+                        # Ctrl+F is flood fill
+                        tool = "FILL"
+                        rect_active = False
+                    else:
+                        # F toggles sprite filter
+                        show_all_sprites = not show_all_sprites
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # paint
                     mx, my = event.pos
@@ -598,14 +645,18 @@ def editor_main(width: int = 22, height: int = 14, template_path: Optional[Path]
                         if clicked_tab is not None:
                             active_tileset_index = clicked_tab
                         else:
-                            # Tile grid area - now using layer-specific palette
+                            # Tile grid area - now using all sprites or layer-specific palette
                             start_y = tab_y + TAB_HEIGHT + PALETTE_MARGIN
                             if rel_y >= start_y:
                                 ts = tilesets[active_tileset_index]
-                                # Get layer-specific palette
-                                layer_palette = tile_categorizer.create_layer_palette(ts, current_layer)
-                                if not layer_palette:
-                                    layer_palette = list(range(ts.tilecount))
+                                
+                                # Choose palette based on filter setting
+                                if show_all_sprites:
+                                    sprite_palette = list(range(ts.tilecount))
+                                else:
+                                    sprite_palette = tile_categorizer.create_layer_palette(ts, current_layer)
+                                    if not sprite_palette:
+                                        sprite_palette = list(range(min(100, ts.tilecount)))
                                 
                                 cols = max(1, (PALETTE_WIDTH - PALETTE_MARGIN * 2) // (PALETTE_TILE + PALETTE_MARGIN))
                                 rows_fit = max(1, (grid_h - start_y - PALETTE_MARGIN) // (PALETTE_TILE + PALETTE_MARGIN))
@@ -614,8 +665,8 @@ def editor_main(width: int = 22, height: int = 14, template_path: Optional[Path]
                                 r = (rel_y - start_y) // (PALETTE_TILE + PALETTE_MARGIN)
                                 if 0 <= c < cols and 0 <= r < rows_fit:
                                     palette_index = scroll * cols + r * cols + c
-                                    if 0 <= palette_index < len(layer_palette):
-                                        local_id = layer_palette[palette_index]
+                                    if 0 <= palette_index < len(sprite_palette):
+                                        local_id = sprite_palette[palette_index]
                                         selected_gid = ts.firstgid + local_id
                 elif event.button == 3:  # right click eyedropper on grid
                     mx, my = event.pos
@@ -638,14 +689,18 @@ def editor_main(width: int = 22, height: int = 14, template_path: Optional[Path]
                     mx, my = event.pos
                     if mx >= grid_w + LAYER_PANEL_WIDTH:
                         ts = tilesets[active_tileset_index]
-                        # Get layer-specific palette for scroll calculation
-                        layer_palette = tile_categorizer.create_layer_palette(ts, current_layer)
-                        if not layer_palette:
-                            layer_palette = list(range(ts.tilecount))
+                        
+                        # Choose palette based on filter setting for scroll calculation
+                        if show_all_sprites:
+                            sprite_palette = list(range(ts.tilecount))
+                        else:
+                            sprite_palette = tile_categorizer.create_layer_palette(ts, current_layer)
+                            if not sprite_palette:
+                                sprite_palette = list(range(min(100, ts.tilecount)))
                         
                         cols = max(1, (PALETTE_WIDTH - PALETTE_MARGIN * 2) // (PALETTE_TILE + PALETTE_MARGIN))
                         rows_fit = max(1, (grid_h - (25 + TAB_HEIGHT + PALETTE_MARGIN) - PALETTE_MARGIN) // (PALETTE_TILE + PALETTE_MARGIN))
-                        max_rows = (len(layer_palette) + cols - 1) // cols
+                        max_rows = (len(sprite_palette) + cols - 1) // cols
                         max_scroll = max(0, max_rows - rows_fit)
                         scroll = palette_scroll_by_ts.get(active_tileset_index, 0)
                         palette_scroll_by_ts[active_tileset_index] = min(max_scroll, scroll + 1)
@@ -676,7 +731,7 @@ def editor_main(width: int = 22, height: int = 14, template_path: Optional[Path]
 
         draw_grid(screen, tmpl, tilesets, font, selected_gid, tool, current_layer, grid_w, grid_h, rect_preview)
         draw_layer_panel(screen, grid_w, grid_h, tmpl, font, current_layer)
-        draw_palette_tilesets(screen, grid_w + LAYER_PANEL_WIDTH, grid_h, tilesets, font, active_tileset_index, selected_gid, palette_scroll_by_ts, current_layer)
+        draw_palette_tilesets(screen, grid_w + LAYER_PANEL_WIDTH, grid_h, tilesets, font, active_tileset_index, selected_gid, palette_scroll_by_ts, current_layer, show_all_sprites)
         if save_as_active:
             draw_save_modal()
         elif help_active:
