@@ -339,7 +339,7 @@ TRANSLATIONS = {
         "halberd": "Hallebarde",
         "pickaxe": "Pioche",
         "wooden_bow": "Arc en Bois",
-        "basic_bow": "Arc Basique",
+        "basic_bow": "Arc Simple",
         "wooden_staff": "Bâton en Bois",
         "necromancer_staff": "Bâton de Nécromancien",
         "plumed_helmet": "Casque Plumet",
