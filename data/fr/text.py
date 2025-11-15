@@ -40,7 +40,7 @@ def f_LEVEL_NUMBER_AND_NAME(number: int, name: str):
 
 # Main menu
 STR_MAIN_MENU = "Menu principal"
-STR_SAVE = "Enregistrer"
+STR_SAVE = "Sauvegarder"
 STR_SUSPEND = "Suspendre"
 STR_START = "Démarrer"
 STR_DIARY = "Journal"
