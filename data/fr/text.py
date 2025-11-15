@@ -312,7 +312,7 @@ def f_RECOVER_NUMBER_HP(power):
     return f"Soigne {power} PV"
 
 def f_EARN_NUMBER_XP(power):
-    return f"Gagner {power} XP"
+    return f"Donne {power} XP"
 
 TRANSLATIONS = {
     "items": {
