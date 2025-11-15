@@ -309,7 +309,7 @@ def f_ENTITY_HAS_BEEN_STUNNED_FOR_NUMBER_TURNS(entity, duration):
     return f"{entity} a été étourdi pendant {duration} tours."
 
 def f_RECOVER_NUMBER_HP(power):
-    return f"écupérer {power} PV"
+    return f"Soigne {power} PV"
 
 def f_EARN_NUMBER_XP(power):
     return f"Gagner {power} XP"
