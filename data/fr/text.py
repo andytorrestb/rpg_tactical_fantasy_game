@@ -13,7 +13,7 @@ STR_LOAD_GAME_MENU = "Charger le jeu"
 
 
 def f_SAVE_NUMBER(number: int):
-    return f"Enregistré {number}"
+    return f"Sauvegarde {number}"
 
 # Options menu
 STR_OPTIONS_MENU = "Options"
