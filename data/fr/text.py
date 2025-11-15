@@ -323,7 +323,7 @@ TRANSLATIONS = {
         "monster_meat": "Viande de Monstre",
         "life_potion": "Potion de Vie",
         "speed_potion": "Potion de Vitesse",
-        "rabbit_step_potion": "Potion de Pas de Lapin",
+        "rabbit_step_potion": "Potion Allure de Lapin",
         "strength_potion": "Potion de Force",
         "vigor_potion": "Potion de Vigueur",
         "scroll_of_knowledge": "Parchemin de Connaissance",
