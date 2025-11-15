@@ -2,7 +2,7 @@ STR_GAME_TITLE = "Au nom des Cinq Chats"
 
 # Start scene
 STR_NEW_GAME = "Nouvelle partie"
-STR_LOAD_GAME = "Charger le jeu"
+STR_LOAD_GAME = "Charger une partie"
 STR_OPTIONS = "Options"
 STR_EXIT_GAME = "Quitter le jeu"
 
