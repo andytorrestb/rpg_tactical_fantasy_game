@@ -389,7 +389,7 @@ TRANSLATIONS = {
     },
     "foe_keywords": {
         "undead": "Mort-vivant",
-        "large": "Grande",
+        "large": "Massif",
         "cavalry": "Cavalerie",
         "mutant": "Mutant",
         "fly": "Volant",
