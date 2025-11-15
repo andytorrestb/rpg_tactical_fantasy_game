@@ -25,7 +25,7 @@ STR_SCREEN_MODE_ = "Mode d'écran :"
 STR_NORMAL = "Normal"
 STR_FAST = "Rapide"
 STR_SLOW = "Lent"
-STR_WINDOW = "Fenêtre"
+STR_WINDOW = "Fenêtré"
 STR_FULL = "Plein écran"
 
 # Save game menu
