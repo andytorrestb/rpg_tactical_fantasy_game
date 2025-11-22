@@ -202,7 +202,7 @@ def f_YOU_RECEIVED_NUMBER_GOLD(gold):
 
 
 def f_YOU_RECEIVED_ITEM(item):
-    return f"[Tu as reçu {item}]"
+    return f"[Vous avez reçu {item}]"
 
 # Messages
 STR_ERROR_NOT_ENOUGH_TILES_TO_SET_PLAYERS = (
