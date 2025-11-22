@@ -210,7 +210,7 @@ STR_ERROR_NOT_ENOUGH_TILES_TO_SET_PLAYERS = (
 )
 STR_GAME_HAS_BEEN_SAVED = "Le jeu a été enregistré"
 STR_ITEM_HAS_BEEN_ADDED_TO_UR_INVENTORY = "L'objet a été ajouté à ton inventaire"
-STR_YOU_FOUND_IN_THE_CHEST = "Tu as trouvé dans le coffre"
+STR_YOU_FOUND_IN_THE_CHEST = "Vous avez trouvé dans le coffre"
 STR_DOOR_HAS_BEEN_OPENED = "La porte a été ouverte"
 STR_YOU_HAVE_NO_FREE_SPACE_IN_YOUR_INVENTORY = (
     "Tu n'as pas d'espace libre dans ton inventaire"
