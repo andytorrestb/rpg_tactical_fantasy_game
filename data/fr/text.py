@@ -198,7 +198,7 @@ STR_NO = "Non"
 
 # src.game_entities.building
 def f_YOU_RECEIVED_NUMBER_GOLD(gold):
-    return f"[Tu as reçu {gold} pièces d'or]"
+    return f"[Vous avez reçu {gold} pièces d'or]"
 
 
 def f_YOU_RECEIVED_ITEM(item):
