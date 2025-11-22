@@ -215,7 +215,7 @@ STR_DOOR_HAS_BEEN_OPENED = "La porte a été ouverte"
 STR_YOU_HAVE_NO_FREE_SPACE_IN_YOUR_INVENTORY = (
     "Vous n'avez pas d'espace libre dans votre inventaire"
 )
-STR_STARTED_PICKING_ONE_MORE_TURN_TO_GO = "Tu as commencé à forcer, un tour de plus pour y aller"
+STR_STARTED_PICKING_ONE_MORE_TURN_TO_GO = "Vous avez commencé à forcer, un tour de plus pour y arriver"
 STR_THERE_IS_NO_FREE_SQUARE_AROUND_THE_OTHER_PORTAL = (
     "Il n'y a pas de case libre autour de l'autre portail"
 )
