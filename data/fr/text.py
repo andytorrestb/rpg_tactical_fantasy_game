@@ -110,7 +110,7 @@ STR_ATTACK_ = "ATTAQUE :"
 STR_DEFENSE_ = "DÉFENSE :"
 STR_MAGICAL_RES_ = "RÉSISTANCE MAGIQUE :"
 STR_ALTERATIONS = "ALTÉRATIONS"
-STR_NONE = "Aucune"
+STR_NONE = "Aucun(e)"
 
 
 def f_DIV(partial, maximum):
