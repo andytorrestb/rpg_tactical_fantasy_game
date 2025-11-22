@@ -232,7 +232,7 @@ STR_THE_ITEM_CANNOT_BE_UNEQUIPPED_NOT_ENOUGH_SPACE_IN_UR_INVENTORY = (
 STR_THE_ITEM_HAS_BEEN_UNEQUIPPED = "L'objet a été déséquipé"
 STR_THE_ITEM_HAS_BEEN_EQUIPPED = "L'objet a été équipé"
 STR_PREVIOUS_EQUIPPED_ITEM_HAS_BEEN_ADDED_TO_YOUR_INVENTORY = (
-    "L'objet précédemment équipé a été ajouté à ton inventaire"
+    "L'objet précédemment équipé a été ajouté à votre inventaire"
 )
 STR_THE_ITEM_HAS_BEEN_BOUGHT = "L'objet a été acheté"
 STR_NOT_ENOUGH_SPACE_IN_INVENTORY_TO_BUY_THIS_ITEM = (
