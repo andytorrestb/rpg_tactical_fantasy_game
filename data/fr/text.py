@@ -222,7 +222,7 @@ STR_THERE_IS_NO_FREE_SQUARE_AROUND_THE_OTHER_PORTAL = (
 STR_BUT_THERE_IS_NOT_ENOUGH_SPACE_IN_INVENTORY_TO_TAKE_IT = (
     "Mais il n'y a pas assez d'espace dans l'inventaire pour le prendre !"
 )
-STR_YOU_HAVE_NO_KEY_TO_OPEN_A_DOOR = "Tu n'as pas de clé pour ouvrir une porte"
+STR_YOU_HAVE_NO_KEY_TO_OPEN_A_DOOR = "Vous n'avez pas de clé pour ouvrir une porte"
 STR_YOU_HAVE_NO_KEY_TO_OPEN_A_CHEST = "Tu n'as pas de clé pour ouvrir un coffre"
 STR_ITEM_HAS_BEEN_TRADED = "L'objet a été échangé"
 STR_ITEM_HAS_BEEN_THROWN_AWAY = "L'objet a été jeté"
