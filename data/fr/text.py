@@ -241,7 +241,7 @@ STR_NOT_ENOUGH_SPACE_IN_INVENTORY_TO_BUY_THIS_ITEM = (
 STR_NOT_ENOUGH_GOLD_TO_BY_THIS_ITEM = "Il n'y a pas assez d'or pour acheter cet objet."
 STR_THE_ITEM_HAS_BEEN_SOLD = "L'objet a été vendu."
 STR_THIS_ITEM_CANT_BE_SOLD = "Le vendeur n'a pas les fonds pour t'acheter cet objet !"
-STR_THIS_HOUSE_SEEMS_CLOSED = "Cette maison semble être fermée..."
+STR_THIS_HOUSE_SEEMS_CLOSED = "Cette maison semble être verrouillée..."
 
 
 def f_ATTACKER_ATTACKED_TARGET_BUT_PARRIED(attacker, target):
