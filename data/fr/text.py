@@ -9,7 +9,7 @@ STR_EXIT_GAME = "Quitter le jeu"
 # Close button
 STR_CLOSE = "Fermer"
 # Load game menu
-STR_LOAD_GAME_MENU = "Charger le jeu"
+STR_LOAD_GAME_MENU = "Charger une partie"
 
 
 def f_SAVE_NUMBER(number: int):
