@@ -78,7 +78,7 @@ STR_SHOPPING_SELLING = "Magasin - Vente"
 
 
 def f_UR_GOLD(gold):
-    return f"Ton or : {gold}"
+    return f"Votre or : {gold}"
 
 def f_SHOP_GOLD(shop_balance):
     return f"Or du commerçant : {shop_balance}"
