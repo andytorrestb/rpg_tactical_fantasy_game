@@ -69,7 +69,7 @@ STR_OPEN_DOOR = "Ouvrir la porte"
 STR_USE_PORTAL = "Utiliser le portail"
 STR_DRINK = "Boire"
 STR_TALK = "Parler"
-STR_TAKE = "Prendre"
+STR_TAKE = "Saisir"
 STR_ATTACK = "Attaquer"
 STR_SELECT_AN_ACTION = "Sélectionner une action"
 
