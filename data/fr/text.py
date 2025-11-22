@@ -191,7 +191,7 @@ def f_TURNS_LEFT_NUMBER(turns_left):
     return f"Tours restants : {turns_left}"
 
 # Ask save menu
-STR_SAVE_THE_GAME_ = "Enregistrer le jeu ?"
+STR_SAVE_THE_GAME_ = "Sauvegarder la partie ?"
 STR_YES = "Oui"
 STR_NO = "Non"
 
