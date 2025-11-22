@@ -213,7 +213,7 @@ STR_ITEM_HAS_BEEN_ADDED_TO_UR_INVENTORY = "L'objet a été ajouté à ton invent
 STR_YOU_FOUND_IN_THE_CHEST = "Vous avez trouvé dans le coffre"
 STR_DOOR_HAS_BEEN_OPENED = "La porte a été ouverte"
 STR_YOU_HAVE_NO_FREE_SPACE_IN_YOUR_INVENTORY = (
-    "Tu n'as pas d'espace libre dans ton inventaire"
+    "Vous n'avez pas d'espace libre dans votre inventaire"
 )
 STR_STARTED_PICKING_ONE_MORE_TURN_TO_GO = "Tu as commencé à forcer, un tour de plus pour y aller"
 STR_THERE_IS_NO_FREE_SQUARE_AROUND_THE_OTHER_PORTAL = (
