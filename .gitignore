@@ -25,3 +25,5 @@ venv.bak/
 # pyinstaller generated content
 build/
 dist/
+# Level editor output (never part of the game data)
+editor_exports/

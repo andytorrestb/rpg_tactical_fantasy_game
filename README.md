@@ -64,6 +64,14 @@ have [Python3.13](https://python.org) (or above) installed, and [uv](https://doc
 
 Then you can run `uv run main.py` to start the game.
 
+## Level editor
+
+A visual level editor for creating new levels (maps, foes, chests, shops,
+missions, dialogs and events) without editing XML/TMX by hand ships with the
+repository. Start it from the repository root with `uv run editor_main.py`.
+Levels are exported to a separate folder and never overwrite the game data.
+See [editor/README.md](editor/README.md) for the full guide.
+
 ## Keys
 
 * Left click : Select a player, choose a case to move, select an action to do etc (main button)
